@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding="utf-8" ?>
+<odoo>
+    <!-- PARA GENERAR BOTON DE IMPRIMIR-->
+    <record id="action_report_presupuesto" model="ir.actions.report">
+        <field name="name">Presupuesto!</field>
+        <field name="model">presupuesto</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">peliculas.report_presupuesto</field>
+        <field name="report_file">peliculas.report_presupuesto</field>
+        <field name="print_report_name">('Presupuesto - %s' %(object.name))</field>
+        <field name="binding_model_id" ref="model_presupuesto"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!--PARA PODER IMPRIMIR CONFIGURACION DE DISEÑO DEL REPORTE-->
+
+    <!-- QWeb Reports DOCUMENTACION ODOO-->
+    <template id="report_presupuesto">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Report title</h2>
+                        <p>This object's name is <span t-field="o.name"/></p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

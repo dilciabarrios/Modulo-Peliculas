@@ -1,0 +1,234 @@
+<?xml version='1.0' encoding="utf-8" ?>
+<odoo>
+
+    <record id="view_presupuesto_form" model="ir.ui.view">
+        <field name="name">Vista formulario de presupuesto de peliculas</field>
+        <field name="model">presupuesto</field>
+        <field name="arch"  type="xml">
+            <form>
+            <!-- limitar visibilidad de mi estados con statusbar_visible-->
+                <header>
+                <!--object para llamar a una función python-->
+                    <button string="Aprobado" type="object" name="aprobar_presupuesto" class="oe_highlight" states="borrador"/>
+                    <button string="Cancelar" type="object" name="cancelar_presupuesto" states="borrador,aprobado"/>
+                    <button string="Popup" type="action" name="%(action_open_update_wizard)d" states="aprobado" groups="peliculas.group_pelicula_administrador"/>
+                    <field name="state" widget="statusbar" statusbar_visible="borrador,aprobado"/>
+                </header>
+                <!-- alertas se colocan debajo del header si queremos que vaya a nivel formulario-->
+                <!--
+                    alert-info (color azul)
+                    alert-success (verde)
+                    alert-warning (naranaja)
+                    alert-danger (rojo)
+                -->
+                <div class= "alert alert-info" role="alert" style= "margin-bottom: 0" attrs="{'invisible': [('dsc_clasificacion', '=', False)]}">
+                    <!-- cuando un campo es solo lectura odoo no lo actualiza por eso se 
+                    coloca el foce_save-->                   
+                    <field name="dsc_clasificacion" readonly="1" force_save="1"/>
+                </div>
+                <sheet>
+                    <widget name="web_ribbon" title="Archivado" bg_color="bg-danger" attrs="{'invisible': [('active','=', True)]}"/>
+                    
+                    <!--aqui colocamos opciones para resolucion de la imagen, 
+                    que resolucion y tamaño el tamaño más grande es 128-->
+                    <field name="image_1920" widget="image" class="oe_avatar" 
+                        option="{'preview_image:' 'image_128', 'size': ['',128]}"/>
+                    
+                    <!--clase permite colocar el texto a la izquierda (oe_title)-->
+                    <!--las etiquetas de los campos por ejemplo nombre de la peliculo solo aparece cuando estan 
+                    dentro de un group-->
+                    <!--placeholder para que dentro de una etiqueta el usuario sepa que colocar
+                    alli puedo colocar una breve y corta descripcion-->
+                    <!--¿como colocar un campo que sea obligatorio ? required="1"-->
+                    <!-- default_focus="1" para que el cursor por defecto este por defecto en un terminado campo-->
+                    <!--style="display: flex;" para agregar elementos uno al costado del otro-->
+                    <div class="oe_title">
+                        <div class="o_row">
+                            <field name="active" invisible="1"/>
+                            <h1 style="display: flex;">
+                                <field name="name"
+                                    placeholder="Nombre de la película" 
+                                    required="1"
+                                    default_focus="1" class="oe_inline"/>
+                                <!--string = lo dejamos vacio para que salga el circulo solo sin titulo-->
+                                <!-- class oe_edit_only sirve para que el numero de puntacion para editar solo se muestre
+                                cuando se este editando y no en pantalla al lado widget percentpie-->
+                                <field name="puntuacion" widget="percentpie" string=" " style="pading-left: 10 px," class="oe_inline"/>
+                                <field name="puntuacion2" placeholder="Puntación para usuario" class="oe_edit_only oe_inline"/>
+                            </h1>
+                        </div>
+                        <div class="o_row" style="display: flex;">
+                            <field name="clasificacion" required="1"/>
+                            <span class="fa fa-circle" 
+                                attrs="{'invisible': [('clasificacion','=', False), ('fch_estreno','=', False),]}"
+                                style="font-size: 8px; padding: 5px 5px;"/>
+                            <field name="fch_estreno"/>
+                        </div>
+                        <!--widget="many2many_tags" esta clase me permite que los generos se muestren en forma de ovalos alargados-->
+                        <div class="o_row">
+                            <field name="genero_ids" widget="many2many_tags" style="display: flex;"/>
+                        </div>
+                    </div>
+                    <!--style="margin-top: -10px; si quiero agregar un margen de distancias con los elementos
+                    que esten arriba del campo-->
+                    <!--attrs="{'readonly':[('state', '!=' ,'borrador')]}"
+                    para editar solo cuando este el estado de borrador-->
+                    <group string="Datos principales">
+                        <field name="vista_general" placeholder="Vista General" attrs="{'readonly':[('state', '!=' ,'borrador')]}"/>
+                    <!-- category_id (asi se llama el campo que almacena las categorias de los directores en ficha)
+                    de contactos 'in' (este en) categoria_director_id -->
+                        <group>
+                            <field name="director_id" domain="[('category_id', 'in', [categoria_director_id])]"
+                                options="{'no_create': True, 'no_open': True}"/>
+                            <field name="categoria_director_id" invisible='0'/>
+                            <field name="link_trailer" widget="url"/>
+                            <field name="fch_aprobado" readonly="1"/>
+                            <field name="num_presupuesto" readonly="1"/>
+                        </group>
+                        <!-- readonly="1" para que no se edita y se realice de forma automatica-->
+                        <!-- filename  incova el nombre de un archivo-->
+        
+                        <group>
+                            <field name="es_libro" widget="boolean_toggle"/>
+                            <field name="libro" filename="libro_filename" attrs="{'invisible': [('es_libro','=', False)]}"/>
+                            <field name="libro_filename" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                       <!-- <separator string ="Detalles"/>  para colocar un titulo en-->
+                        <notebook>
+                        
+                            <page string="Presupuesto">
+                                <group>
+                                    <group>
+                                        <field name="num_presupuesto" readonly="1"/>
+                                         <field name="fch_creacion" readonly="1"/>
+                                        <field name="fch_aprobado" readonly="1"/>
+                                    </group>
+
+                                    <group>
+                                        <field name="currency_id"/>
+                                        <field name="campos_ocultos" widget="boolean_toggle" groups="peliculas.group_pelicula_administrador"/>
+                                    </group>
+                                </group>
+                            
+                                <field name="detalles_ids">
+                                    <tree editable="bottom">
+                                        <control>
+                                        <!--me permite agregarle al boton una descripcion-->
+                                            <create name="add_product_control" string="Agregar recurso cinematografico"/>
+                                        </control>
+                                        <field name="imagen" widget='image' options="{'size':[80,50]}" optional="show"/>
+                                        <field name="name"/>
+                                        <field name="contacto_id" attrs="{'column_invisible':[('parent.campos_ocultos', '=', False)]}"/>
+                                        <!-- USO DEL "parent" (nos dirijomos al padre ya que todos los campos
+                                        dentro de este arbol pertencen a presupuesto detalles y no a presupuesto) parent.campos_ocultos para que sepa que es un parametro que esta dentro de la cabecera-->
+                                        <field name="cantidad"/>
+                                        <field name="precio"/>
+                                        <field name="importe" readonly='1' force_save='1'/>
+                                        <field name="currency_id" invisible="1"/>
+                                    </tree>
+                                </field>
+                                <group col="6" class="mt-2 mt-md-0">
+                                    <group colspan="4">
+                                            <!-- nolabel es para no colocar la etiqueta pequeña morada que describe los campos en la vista-->
+                                            <field name="terminos" nolabel="1" placeholder="Términos y condiciones.."/>
+                                    </group>
+                                        <group class="oe_subtotal_footer oe_right" colspan="2">
+                                            <field name="base" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                            <field name="impuestos"/>
+                                            <!--oe_subtotal_footer_separator (va a colocar una raya de separacion)-->
+                                            <div class="_oe_subtotal_footer_separator oe_line o_td_label">
+                                            <!-- for = "total" es solo para colocar el efecto de la etiqueta en negro-->
+                                                <label for="total"/>
+                                            </div>
+                                                <field name="total" nolabel="1" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency'}"/>                
+                                        </group>
+                                        <div class="oe_clear"/>
+                                </group>
+                            </page>
+
+                            <page string="Otra Información">
+                                <group>
+                                    <field name="actor_ids" domain="[('category_id', 'in', [categoria_actor_id])]"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        widget="many2many_tags"/>
+                                    <field name="categoria_actor_id" invisible='1'/>
+                                    <field name="opinion"/>
+                                </group>
+                            </page>
+                        </notebook>
+                    
+                    </group>
+
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_presupuesto_tree" model="ir.ui.view">
+        <field name="name">Vista lista de prespuesto</field>
+        <field name="model">presupuesto</field>
+        <field name="arch" type="xml">
+        <!--tree decoration-muted="state == 'cancelado'" decoration-success="state == 'aprobado'"
+        para que los presupuestos aprobados los coloque de un color y los cancelado de otro, segun su estado -->
+
+        <!-- decoration-bf: negrita -->    
+        <!-- decoration-it: cursiva -->
+        <!-- decoration-danger: color rojo -->
+        <!-- decoration-info: color azul claro -->
+        <!-- decoration-muted: color gris claro -->
+        <!-- decoration-success: color verde -->   
+        <!-- decoration-warning: mostaza -->                     
+            
+            <tree decoration-muted="state == 'cancelado'" decoration-success="state == 'aprobado'">
+                <field name="name"/>
+                <field name="num_presupuesto"/>
+                <field name="fch_creacion"/>
+                <!--sum="importe_total, (me va a sumar todos mis totales)esta no tiene que estar definida en prespuesto.py"
+                puedo colocarle cualquier nombre que yo quiera -->
+                <field name="total" sum="importe_total"/>
+                <field name="state" widget="badge" decoration-success="state == 'aprobado'" decoration-danger="state == 'cancelado'"/>
+            </tree>
+        </field>
+    </record>
+
+
+    <record id="view_presupuesto_kanban" model="ir.ui.view">
+        <field name="name">Vista kanban del modelo presupuesto</field>
+        <field name="model">presupuesto</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="id"/>
+                <field name="currency_id"/> <!--colocar campos a los cuales hago referencia pero no quiero que se muestren-->
+                <templates> <!--para definir nuestra plantilla-->
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_image">
+                                <img t-att-src="kanban_image('presupuesto','image_128', record.id.raw_value)" class="o_image_64_contain"/>
+                            </div>
+                            <div class="oe_kanban_details">
+                                <strong class="o_kanban_record_title">
+                                    <field name="name"/>
+                                </strong>
+                                [<field name="clasificacion"/>]
+                                <div>
+                                    <field name="genero_ids"/>
+                                </div>
+                                <div>
+                                    <field name="total" widget="monetary"  options="{'currency_field': 'currency_id', 'field:digits':True}"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+</odoo>
